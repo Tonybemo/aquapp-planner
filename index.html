@@ -39,17 +39,21 @@
                 </button>
             </div>
 
-            <div class="sidebar-scroll">
-                <h3>Clientes Pendientes</h3>
-                <div id="clients-list" class="clients-list" style="min-height: 50px;">
-                    <!-- Client pills will appear here -->
+            <div class="sidebar-lists-container" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin-right: -10px; padding-right: 10px; gap: 16px;">
+                <div style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                    <h3 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 12px;">Clientes Pendientes</h3>
+                    <div id="clients-list" class="clients-list" style="flex: 1; overflow-y: auto; padding-right: 4px;">
+                        <!-- Client pills will appear here -->
+                    </div>
                 </div>
 
-                <h3 style="margin-top: 24px; color: var(--text-secondary); display:flex; align-items:center; gap:6px;">
-                    <i data-lucide="users" style="width:14px; height:14px;"></i> Hechos por compañeros
-                </h3>
-                <div id="delegated-list" class="clients-list delegated-zone">
-                    <!-- Delegated pills will appear here -->
+                <div style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                    <h3 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 12px; display:flex; align-items:center; gap:6px;">
+                        <i data-lucide="users" style="width:14px; height:14px;"></i> Hechos por compañeros
+                    </h3>
+                    <div id="delegated-list" class="clients-list delegated-zone" style="flex: 1; overflow-y: auto; padding-right: 4px; border: 1px dashed var(--border); border-radius: 8px; background: rgba(0,0,0,0.02)">
+                        <!-- Delegated pills will appear here -->
+                    </div>
                 </div>
             </div>
 

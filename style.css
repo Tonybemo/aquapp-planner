@@ -404,24 +404,26 @@ body {
 }
 
 .pill-remove {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 12px;
     cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s;
+    opacity: 0.4;
+    background: rgba(0, 0, 0, 0.05);
+    transition: all 0.2s;
 }
 
 .client-pill:hover .pill-remove {
-    opacity: 0.6;
+    opacity: 0.8;
 }
 
 .pill-remove:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(255, 0, 0, 0.1);
+    color: red;
     opacity: 1 !important;
 }
 

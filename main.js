@@ -196,9 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleStatus(date, pillId);
             };
         } else {
-            // Sidebar pills have a delete option too
-            pill.oncontextmenu = (e) => {
-                e.preventDefault();
+            // Sidebar pills have an explicit remove icon instead of long-press (for tablets)
+            const removeIcon = document.createElement('div');
+            removeIcon.classList.add('pill-remove');
+            removeIcon.innerHTML = '✕';
+            removeIcon.title = "Eliminar de la lista";
+            removeIcon.onclick = (e) => {
+                e.stopPropagation();
                 if (confirm(`¿Eliminar a "${name}" de la lista total de clientes?`)) {
                     clients = clients.filter(c => c !== name);
                     delegatedClients = delegatedClients.filter(c => c !== name);
@@ -206,6 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderSidebarClients();
                 }
             };
+            pill.appendChild(removeIcon);
         }
 
         pill.addEventListener('dragstart', e => {
