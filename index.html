@@ -54,9 +54,16 @@
             </div>
 
             <div class="sidebar-footer">
+                <button id="export-backup-btn" class="btn-secondary" style="margin-bottom: 8px;">
+                    <i data-lucide="download"></i> Exportar Datos
+                </button>
+                <button id="import-backup-btn" class="btn-secondary" style="margin-bottom: 8px;">
+                    <i data-lucide="upload-cloud"></i> Importar Datos
+                </button>
                 <button id="print-btn" class="btn-secondary">
                     <i data-lucide="printer"></i> Imprimir PDF
                 </button>
+                <input type="file" id="backup-file-input" accept=".json" style="display: none;">
             </div>
         </aside>
 

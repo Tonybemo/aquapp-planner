@@ -25,6 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmImportBtn = document.getElementById('confirm-import-btn');
     const importTextarea = document.getElementById('import-textarea');
 
+    // Backup Elements
+    const exportBackupBtn = document.getElementById('export-backup-btn');
+    const importBackupBtn = document.getElementById('import-backup-btn');
+    const backupFileInput = document.getElementById('backup-file-input');
+
     // --- Initialization ---
     function init() {
         renderCalendar();
@@ -414,6 +419,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderCalendar();
             }
         };
+
+        if (exportBackupBtn) {
+            exportBackupBtn.onclick = () => {
+                const data = {
+                    aquapp_clients: clients,
+                    aquapp_entries: calendarEntries,
+                    aquapp_delegated: delegatedClients
+                };
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                
+                const date = new Date();
+                const dateStr = date.toISOString().split('T')[0];
+                downloadAnchorNode.setAttribute("download", "aquapp_backup_" + dateStr + ".json");
+                
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            };
+        }
+
+        if (importBackupBtn && backupFileInput) {
+            importBackupBtn.onclick = () => {
+                backupFileInput.click();
+            };
+
+            backupFileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        
+                        if (importedData.aquapp_clients || importedData.aquapp_entries || importedData.aquapp_delegated) {
+                            if (confirm('¿Estás seguro de que quieres sobreescribir todos los datos actuales con esta copia de seguridad? Esta acción no se puede deshacer.')) {
+                                if (importedData.aquapp_clients) {
+                                    clients = importedData.aquapp_clients;
+                                    localStorage.setItem('aquapp_clients', JSON.stringify(clients));
+                                }
+                                if (importedData.aquapp_entries) {
+                                    calendarEntries = importedData.aquapp_entries;
+                                    localStorage.setItem('aquapp_entries', JSON.stringify(calendarEntries));
+                                }
+                                if (importedData.aquapp_delegated) {
+                                    delegatedClients = importedData.aquapp_delegated;
+                                    localStorage.setItem('aquapp_delegated', JSON.stringify(delegatedClients));
+                                }
+                                
+                                alert('Datos importados correctamente. La página se recargará para aplicar los cambios.');
+                                window.location.reload();
+                            }
+                        } else {
+                            alert('El archivo no parece ser una copia de seguridad válida de Aquapp Planner.');
+                        }
+                    } catch (error) {
+                        alert('Error al leer el archivo. Asegúrate de que es un archivo .json válido.');
+                    }
+                    backupFileInput.value = '';
+                };
+                reader.readAsText(file);
+            });
+        }
 
         printBtn.onclick = () => {
             window.print();
