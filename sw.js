@@ -1,11 +1,11 @@
-const CACHE_NAME = 'aquapp-planner-v3';
+const CACHE_NAME = 'aquapp-planner-v4';
 const urlsToCache = [
-  './',
-  './index.html',
-  './style.css',
-  './main.js',
-  './manifest.json',
-  './supabase_schema.sql'
+  '/',
+  '/style.css',
+  '/main.js',
+  '/manifest.json',
+  '/supabase_schema.sql',
+  '/icon-512.png'
 ];
 
 self.addEventListener('install', event => {

@@ -1,7 +1,7 @@
 {
     "name": "Aquapp Planner",
     "short_name": "Planner",
-    "start_url": "./index.html",
+    "start_url": "/",
     "display": "standalone",
     "background_color": "#f8f9fa",
     "theme_color": "#1a73e8",
