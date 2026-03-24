@@ -1,16 +1,17 @@
 {
     "name": "Aquapp Planner",
     "short_name": "Planner",
-    "start_url": "index.html",
+    "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#f8f9fa",
     "theme_color": "#1a73e8",
-    "description": "Organizador mensual de muestras para Aquapp.",
+    "description": "Organizador semanal y mensual para Aquapp.",
     "icons": [
         {
-            "src": "https://cdn-icons-png.flaticon.com/512/3652/3652191.png",
+            "src": "icon-512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         }
     ]
 }
