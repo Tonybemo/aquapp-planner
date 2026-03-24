@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aquapp Planner - Organizador Mensual</title>
     <link rel="stylesheet" href="style.css">
+    
+    <!-- PWA & Mobile Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a73e8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Planner">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3652/3652191.png">
+
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,6 +89,9 @@
                     <button id="next-month"><i data-lucide="chevron-right"></i></button>
                 </div>
                 <div class="header-actions">
+                    <button id="theme-toggle" class="btn-text" title="Cambiar Tema">
+                        <i data-lucide="moon"></i>
+                    </button>
                     <button id="clear-month" class="btn-text" title="Limpiar mes">
                         <i data-lucide="trash-2"></i>
                     </button>
@@ -128,7 +140,37 @@
         </div>
     </div>
 
+    <!-- Mobile Navigation FAB -->
+    <button id="mobile-sidebar-toggle" class="mobile-fab">
+        <i data-lucide="users"></i>
+    </button>
+
+    <!-- Touch Drag and Drop Polyfill -->
+    <script src="https://unpkg.com/mobile-drag-drop@latest/index.min.js"></script>
+    <script src="https://unpkg.com/mobile-drag-drop@latest/scroll-behaviour.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/mobile-drag-drop@latest/default.css">
+    <script>
+        window.addEventListener('touchmove', function () {}); // iOS requirement
+        MobileDragDrop.polyfill({
+            dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+        });
+    </script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script src="main.js"></script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker Registrado!', reg))
+                    .catch(err => console.error('Error al registrar Service Worker', err));
+            });
+        }
+    </script>
 </body>
 
 </html>

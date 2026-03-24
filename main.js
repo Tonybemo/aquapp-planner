@@ -1,6 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- State & Constants ---
+    const SUPABASE_URL = 'https://wvrqmwsnuzugasaofvmc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2cnFtd3NudXp1Z2FzYW9mdm1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDQyOTAsImV4cCI6MjA4NzQyMDI5MH0.JzxklIsG-kW6yP_89ZLrFZ1Q7Es2r01m05Ie9K_0Ie0';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     let currentDate = new Date();
+    let isMobile = window.innerWidth <= 768;
     let clients = JSON.parse(localStorage.getItem('aquapp_clients')) || ['Cliente Ejemplo A', 'Cliente Ejemplo B'];
     let calendarEntries = JSON.parse(localStorage.getItem('aquapp_entries')) || {};
     let delegatedClients = JSON.parse(localStorage.getItem('aquapp_delegated')) || [];
@@ -17,6 +22,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveIndicator = document.getElementById('save-indicator');
     const clearMonthBtn = document.getElementById('clear-month');
     const printBtn = document.getElementById('print-btn');
+    const themeToggleBtn = document.getElementById('theme-toggle');
+
+    // Theme setup
+    let currentTheme = localStorage.getItem('aquapp_theme') || 'light';
+    if (currentTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        if (themeToggleBtn) themeToggleBtn.innerHTML = '<i data-lucide="sun"></i>';
+    }
 
     // Import Modal Elements
     const importModal = document.getElementById('import-modal');
@@ -31,11 +44,48 @@ document.addEventListener('DOMContentLoaded', () => {
     const backupFileInput = document.getElementById('backup-file-input');
 
     // --- Initialization ---
-    function init() {
-        renderCalendar();
-        renderSidebarClients();
+    async function init() {
+        setupMobileSidebar();
         setupEventListeners();
         if (window.lucide) lucide.createIcons();
+        
+        // Show loading state here if desired
+
+        // Load data from Supabase
+        await loadFromSupabase();
+
+        renderCalendar();
+        renderSidebarClients();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const wasMobile = isMobile;
+            isMobile = window.innerWidth <= 768;
+            if (wasMobile !== isMobile) {
+                renderCalendar();
+            }
+        });
+    }
+
+    function setupMobileSidebar() {
+        const fab = document.getElementById('mobile-sidebar-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        
+        const overlay = document.createElement('div');
+        overlay.classList.add('sidebar-overlay');
+        document.body.appendChild(overlay);
+
+        if (fab && sidebar) {
+            fab.addEventListener('click', () => {
+                sidebar.classList.add('open');
+                overlay.classList.add('active');
+            });
+
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+        }
     }
 
     // --- Calendar Logic ---
@@ -44,68 +94,116 @@ document.addEventListener('DOMContentLoaded', () => {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
 
-        // Header text
         const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        monthYearText.innerText = `${monthNames[month]} ${year}`;
+        const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
-        // Get first day of month (0 = Sun, 1 = Mon...)
-        let firstDayOfMonth = new Date(year, month, 1).getDay();
-        // Adjust to Mon-Sun (Mon=0, Sun=6)
-        firstDayOfMonth = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+        let daysToRender = [];
 
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const prevMonthDays = new Date(year, month, 0).getDate();
+        if (isMobile) {
+            // --- WEEKLY VIEW ---
+            const current = new Date(currentDate);
+            const dayOfWeek = current.getDay();
+            const diff = current.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); 
+            const monday = new Date(current.setDate(diff));
 
-        // Calculate total cells needed (usually 35 or 42)
-        const totalCells = (firstDayOfMonth + daysInMonth) > 35 ? 42 : 35;
-
-        for (let i = 0; i < totalCells; i++) {
-            const dayCell = document.createElement('div');
-            dayCell.classList.add('day-cell');
-
-            let dayNumber;
-            let cellDate;
-
-            if (i < firstDayOfMonth) {
-                // Days from prev month
-                dayNumber = prevMonthDays - firstDayOfMonth + i + 1;
-                dayCell.classList.add('other-month');
-                cellDate = new Date(year, month - 1, dayNumber);
-            } else if (i < firstDayOfMonth + daysInMonth) {
-                // Days from current month
-                dayNumber = i - firstDayOfMonth + 1;
-                cellDate = new Date(year, month, dayNumber);
-
-                // Today check
-                const today = new Date();
-                if (dayNumber === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
-                    dayCell.classList.add('today');
-                }
-            } else {
-                // Days from next month
-                dayNumber = i - (firstDayOfMonth + daysInMonth) + 1;
-                dayCell.classList.add('other-month');
-                cellDate = new Date(year, month + 1, dayNumber);
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(monday);
+                d.setDate(monday.getDate() + i);
+                daysToRender.push({
+                    date: d,
+                    dayNumber: d.getDate(),
+                    month: d.getMonth(),
+                    year: d.getFullYear(),
+                    isOtherMonth: false
+                });
             }
 
-            // Flag Weekends (Saturday=6, Sunday=0 in JS dates)
-            const dayOfWeek = cellDate.getDay();
-            if (dayOfWeek === 0 || dayOfWeek === 6) {
+            const endSunday = daysToRender[6].date;
+            monthYearText.innerText = `${monday.getDate()} ${monthNames[monday.getMonth()].substring(0,3)} - ${endSunday.getDate()} ${monthNames[endSunday.getMonth()].substring(0,3)}`;
+        } else {
+            // --- MONTHLY VIEW ---
+            monthYearText.innerText = `${monthNames[month]} ${year}`;
+
+            let firstDayOfMonth = new Date(year, month, 1).getDay();
+            firstDayOfMonth = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+
+            const totalCells = (firstDayOfMonth + daysInMonth) > 35 ? 42 : 35;
+
+            for (let i = 0; i < totalCells; i++) {
+                if (i < firstDayOfMonth) {
+                    daysToRender.push({
+                        date: new Date(year, month - 1, prevMonthDays - firstDayOfMonth + i + 1),
+                        dayNumber: prevMonthDays - firstDayOfMonth + i + 1,
+                        month: month - 1,
+                        year: year,
+                        isOtherMonth: true
+                    });
+                } else if (i < firstDayOfMonth + daysInMonth) {
+                    daysToRender.push({
+                        date: new Date(year, month, i - firstDayOfMonth + 1),
+                        dayNumber: i - firstDayOfMonth + 1,
+                        month: month,
+                        year: year,
+                        isOtherMonth: false
+                    });
+                } else {
+                    daysToRender.push({
+                        date: new Date(year, month + 1, i - (firstDayOfMonth + daysInMonth) + 1),
+                        dayNumber: i - (firstDayOfMonth + daysInMonth) + 1,
+                        month: month + 1,
+                        year: year,
+                        isOtherMonth: true
+                    });
+                }
+            }
+        }
+
+        // Render the cells
+        daysToRender.forEach((dayData) => {
+            const dayCell = document.createElement('div');
+            dayCell.classList.add('day-cell');
+            
+            const cellDate = dayData.date;
+            const jsDayOfWeek = cellDate.getDay();
+            const uiWeekday = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1; 
+            dayCell.dataset.weekday = uiWeekday;
+
+            if (dayData.isOtherMonth) {
+                dayCell.classList.add('other-month');
+            }
+
+            const today = new Date();
+            if (dayData.dayNumber === today.getDate() && dayData.month === today.getMonth() && dayData.year === today.getFullYear()) {
+                dayCell.classList.add('today');
+            }
+
+            if (jsDayOfWeek === 0 || jsDayOfWeek === 6) {
                 dayCell.classList.add('weekend');
             }
 
             const dateStr = formatDate(cellDate);
-            dayCell.innerHTML = `<span class="day-number">${dayNumber}</span>`;
             dayCell.dataset.date = dateStr;
 
-            // Render entries for this day
+            if (isMobile) {
+                dayCell.innerHTML = `
+                    <div class="day-number-header">
+                        <span class="day-name">${dayNames[jsDayOfWeek]}</span>
+                        <span class="day-number">${dayData.dayNumber} ${monthNames[dayData.month].substring(0,3).toLowerCase()}</span>
+                    </div>
+                `;
+            } else {
+                dayCell.innerHTML = `<span class="day-number">${dayData.dayNumber}</span>`;
+            }
+
             const entries = calendarEntries[dateStr] || [];
             entries.forEach(entry => {
                 const pill = createClientPill(entry.name, entry.status, true, entry.id);
                 dayCell.appendChild(pill);
             });
 
-            // Drag and Drop Events for Day Cell
             dayCell.addEventListener('dragover', e => {
                 e.preventDefault();
                 dayCell.classList.add('drag-over');
@@ -118,12 +216,16 @@ document.addEventListener('DOMContentLoaded', () => {
             dayCell.addEventListener('drop', e => {
                 e.preventDefault();
                 dayCell.classList.remove('drag-over');
-                const clientData = JSON.parse(e.dataTransfer.getData('text/plain'));
-                handleDrop(dateStr, clientData);
+                const dragData = e.dataTransfer.getData('text/plain');
+                if (dragData) {
+                   const clientData = JSON.parse(dragData);
+                   handleDrop(dateStr, clientData);
+                }
             });
 
             calendarDays.appendChild(dayCell);
-        }
+        });
+
         if (window.lucide) lucide.createIcons();
     }
 
@@ -308,14 +410,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function saveState() {
+    async function saveState() {
+        // Save locally for offline robustness
         localStorage.setItem('aquapp_clients', JSON.stringify(clients));
         localStorage.setItem('aquapp_entries', JSON.stringify(calendarEntries));
         localStorage.setItem('aquapp_delegated', JSON.stringify(delegatedClients));
 
-        // Visual indicator
-        saveIndicator.classList.add('visible');
-        setTimeout(() => saveIndicator.classList.remove('visible'), 2000);
+        // Sync to Supabase Planner State
+        try {
+            await supabase.from('planner_state').upsert({
+                id: 1,
+                entries: calendarEntries,
+                delegated: delegatedClients,
+                updated_at: new Date()
+            });
+            // Visual indicator
+            saveIndicator.classList.add('visible');
+            setTimeout(() => saveIndicator.classList.remove('visible'), 2000);
+        } catch (error) {
+            console.error('Error saving to Supabase:', error);
+            // Could add an "Offline" visual indicator here
+        }
+    }
+
+    async function loadFromSupabase() {
+        try {
+            // 1. Fetch Clients (Source of Truth)
+            const { data: dbClients, error: clientsError } = await supabase.from('clientes').select('nombre');
+            if (dbClients && !clientsError) {
+                // Merge local new clients with cloud clients just in case, or override
+                clients = dbClients.map(c => c.nombre);
+                localStorage.setItem('aquapp_clients', JSON.stringify(clients));
+            }
+
+            // 2. Fetch Planner State
+            const { data: dbState, error: stateError } = await supabase.from('planner_state').select('entries, delegated').eq('id', 1).single();
+            if (dbState && !stateError) {
+                calendarEntries = dbState.entries || {};
+                delegatedClients = dbState.delegated || [];
+                localStorage.setItem('aquapp_entries', JSON.stringify(calendarEntries));
+                localStorage.setItem('aquapp_delegated', JSON.stringify(delegatedClients));
+            }
+        } catch (error) {
+            console.error('Error loading from Supabase, using local state:', error);
+            // State is already loaded from localStorage at file start
+        }
     }
 
     function formatDate(date) {
@@ -332,22 +471,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupEventListeners() {
         prevMonthBtn.onclick = () => {
-            currentDate.setMonth(currentDate.getMonth() - 1);
+            if (isMobile) {
+                currentDate.setDate(currentDate.getDate() - 7);
+            } else {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+            }
             renderCalendar();
-            renderSidebarClients(); // Re-filter sidebar for new month
+            renderSidebarClients(); // Re-filter sidebar for new period
         };
 
         nextMonthBtn.onclick = () => {
-            currentDate.setMonth(currentDate.getMonth() + 1);
+            if (isMobile) {
+                currentDate.setDate(currentDate.getDate() + 7);
+            } else {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+            }
             renderCalendar();
-            renderSidebarClients(); // Re-filter sidebar for new month
+            renderSidebarClients(); // Re-filter sidebar for new period
         };
 
-        addClientBtn.onclick = () => {
+        if (themeToggleBtn) {
+            themeToggleBtn.onclick = () => {
+                currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', currentTheme);
+                localStorage.setItem('aquapp_theme', currentTheme);
+                themeToggleBtn.innerHTML = currentTheme === 'light' ? '<i data-lucide="moon"></i>' : '<i data-lucide="sun"></i>';
+                if (window.lucide) lucide.createIcons();
+            };
+        }
+
+        addClientBtn.onclick = async () => {
             const name = newClientInput.value.trim();
             if (name && !clients.includes(name)) {
                 clients.push(name);
                 newClientInput.value = '';
+                
+                // Real-time insert to Supabase Clientes table
+                saveIndicator.innerHTML = '<i class="lucide-refresh-cw"></i> Guardando...';
+                saveIndicator.classList.add('visible');
+                const { error } = await supabase.from('clientes').insert([{ nombre: name }]);
+                if (error && error.code !== '23505') { // Ignore unique constraint error
+                     console.error("Error adding client to DB:", error);
+                }
+                saveIndicator.innerHTML = '<i data-lucide="check-circle"></i> Guardado';
+
                 saveState();
                 renderSidebarClients();
             }
@@ -383,7 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
             importModal.style.display = 'none';
         };
 
-        confirmImportBtn.onclick = () => {
+        confirmImportBtn.onclick = async () => {
             const text = importTextarea.value;
             const newNames = text.split('\n')
                 .map(n => n.trim())
@@ -391,6 +558,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (newNames.length > 0) {
                 clients = [...clients, ...newNames];
+                
+                // Bulk insert to Supabase
+                const newRows = newNames.map(name => ({ nombre: name }));
+                await supabase.from('clientes').upsert(newRows, { onConflict: 'nombre' });
+
                 saveState();
                 renderSidebarClients();
                 importTextarea.value = '';
