@@ -628,16 +628,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!file) return;
 
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = async (e) => {
                     try {
                         const importedData = JSON.parse(e.target.result);
                         
                         if (importedData.aquapp_clients || importedData.aquapp_entries || importedData.aquapp_delegated) {
-                            if (confirm('¿Estás seguro de que quieres sobreescribir todos los datos actuales con esta copia de seguridad? Esta acción no se puede deshacer.')) {
-                                if (importedData.aquapp_clients) {
+                            if (confirm('¿Estás seguro de que quieres sobreescribir todos los datos actuales con esta copia de seguridad? Esta acción sobreescribirá también la nube.')) {
+                                
+                                saveIndicator.innerHTML = '<i class="lucide-refresh-cw"></i> Sincronizando copia a la nube...';
+                                saveIndicator.classList.add('visible');
+
+                                if (importedData.aquapp_clients && importedData.aquapp_clients.length > 0) {
+                                    const newRows = importedData.aquapp_clients.map(n => ({ nombre: n }));
+                                    await supabase.from('clientes').upsert(newRows, { onConflict: 'nombre' });
                                     clients = importedData.aquapp_clients;
                                     localStorage.setItem('aquapp_clients', JSON.stringify(clients));
                                 }
+                                
+                                const entriesToSync = importedData.aquapp_entries || {};
+                                const delegatedToSync = importedData.aquapp_delegated || [];
+                                
+                                await supabase.from('planner_state').upsert({
+                                    id: 1,
+                                    entries: entriesToSync,
+                                    delegated: delegatedToSync,
+                                    updated_at: new Date()
+                                });
+
                                 if (importedData.aquapp_entries) {
                                     calendarEntries = importedData.aquapp_entries;
                                     localStorage.setItem('aquapp_entries', JSON.stringify(calendarEntries));
@@ -647,7 +664,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                     localStorage.setItem('aquapp_delegated', JSON.stringify(delegatedClients));
                                 }
                                 
-                                alert('Datos importados correctamente. La página se recargará para aplicar los cambios.');
+                                saveIndicator.innerHTML = '<i data-lucide="check-circle"></i> Sincronizado';
+                                
+                                alert('Datos importados a la nube correctamente. La página se recargará.');
                                 window.location.reload();
                             }
                         } else {
