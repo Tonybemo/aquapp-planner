@@ -150,9 +150,12 @@
     <script src="https://unpkg.com/mobile-drag-drop@latest/scroll-behaviour.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/mobile-drag-drop@latest/default.css">
     <script>
-        window.addEventListener('touchmove', function () {}); // iOS requirement
+        // Requisito para iOS Safari
+        window.addEventListener('touchmove', function () {}, {passive: false});
+        
         MobileDragDrop.polyfill({
-            dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+            dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride,
+            holdToDrag: 250 // Requiere mantener pulsado 250ms para arrastrar. ¡Esto arregla el scroll!
         });
     </script>
 
