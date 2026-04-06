@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aquapp-planner-v5';
+const CACHE_NAME = 'aquapp-planner-v6';
 const urlsToCache = [
   '/',
   '/style.css',
