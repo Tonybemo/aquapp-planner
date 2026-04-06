@@ -72,6 +72,8 @@ body {
     background-color: var(--bg-app);
     color: var(--text-main);
     height: 100vh;
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .app-container {
@@ -161,18 +163,34 @@ body {
     padding-right: 10px;
 }
 
-.sidebar-scroll h3 {
+.sidebar-list-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.sidebar h3 {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-secondary);
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .clients-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+    -webkit-overflow-scrolling: touch; /* Fluidez en iOS */
+    scrollbar-width: thin;
+    will-change: transform; /* Hint to browser for GPU acceleration */
 }
 
 .delegated-zone {

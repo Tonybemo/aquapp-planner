@@ -317,6 +317,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         pill.addEventListener('dragstart', e => {
             pill.classList.add('dragging');
+            
+            // Auto-close sidebar on mobile to gain visibility
+            if (window.innerWidth <= 768) {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.querySelector('.sidebar-overlay');
+                if (sidebar && sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
+                    if (overlay) overlay.classList.remove('active');
+                }
+            }
+
             let source = 'sidebar';
             if (isCalendarPill) source = pill.closest('.day-cell').dataset.date;
             else if (pill.closest('#delegated-list')) source = 'delegated';
@@ -684,6 +695,57 @@ document.addEventListener('DOMContentLoaded', () => {
         printBtn.onclick = () => {
             window.print();
         };
+
+        // --- NEW: Mobile Gestures & Drag Improvements ---
+        
+        // 1. Swipe Navigation
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        calendarDays.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        calendarDays.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            const threshold = 70; // Medium sensitivity
+            if (touchEndX < touchStartX - threshold) nextMonthBtn.click(); // Swipe Left
+            if (touchEndX > touchStartX + threshold) prevMonthBtn.click(); // Swipe Right
+        }, { passive: true });
+
+        // 2. Drag to navigate edges
+        let edgeScrollTimer = null;
+        document.addEventListener('dragover', e => {
+            if (window.innerWidth > 768) return; 
+            
+            const x = e.clientX;
+            const width = window.innerWidth;
+            const edgeSize = 40; 
+            
+            if (x < edgeSize) {
+                if (!edgeScrollTimer) {
+                    edgeScrollTimer = setTimeout(() => {
+                        prevMonthBtn.click();
+                        edgeScrollTimer = null;
+                    }, 600);
+                }
+            } else if (x > width - edgeSize) {
+                if (!edgeScrollTimer) {
+                    edgeScrollTimer = setTimeout(() => {
+                        nextMonthBtn.click();
+                        edgeScrollTimer = null;
+                    }, 600);
+                }
+            } else {
+                clearTimeout(edgeScrollTimer);
+                edgeScrollTimer = null;
+            }
+        });
+
+        document.addEventListener('dragend', () => {
+            clearTimeout(edgeScrollTimer);
+            edgeScrollTimer = null;
+        });
     }
 
     init();
