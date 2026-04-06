@@ -67,11 +67,16 @@
     box-sizing: border-box;
 }
 
-body {
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100vh;
+    overflow-x: hidden; /* BLOCK HORIZONTAL SCROLL */
+    position: relative;
     font-family: 'Inter', sans-serif;
     background-color: var(--bg-app);
     color: var(--text-main);
-    height: 100vh;
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
 }
@@ -79,6 +84,8 @@ body {
 .app-container {
     display: flex;
     height: 100vh;
+    width: 100%;
+    overflow-x: hidden; /* BLOCK HORIZONTAL SCROLL */
 }
 
 /* Sidebar */
@@ -315,8 +322,8 @@ body {
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
     overflow-y: auto;
-    /* Scrollbar for the calendar grid */
     overflow-x: hidden;
+    touch-action: pan-y; /* Let JS handle horizontal swipes, browser handles vertical scroll */
 }
 
 .calendar-grid-header {
@@ -354,7 +361,7 @@ body {
 .calendar-days {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    /* Removed grid-template-rows: repeat(6, 1fr) to allow growth */
+    touch-action: pan-y; /* Same here for the inner grid */
 }
 
 .day-cell {
